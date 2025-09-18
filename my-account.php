@@ -17,13 +17,15 @@ if ( !is_user_logged_in() ) : ?>
     <div class="custom-account-login-form">
         <h2>Login</h2>
         <?php
+            $shop2_url = get_permalink( get_page_by_path('shop-2') );
+
             wp_login_form(array(
-                'redirect' => get_permalink(),
+                'redirect'       => get_permalink( get_page_by_path('shop-2') ), 
                 'label_username' => 'Email or Username',
                 'label_password' => 'Password',
-                'label_log_in' => 'Login',
+                'label_log_in'   => 'Login',
             ));
-            ?>
+        ?>
     </div>
 </div>
 
@@ -59,6 +61,9 @@ endif;
 
 // Show custom account container for logged-in users
 $current_user = wp_get_current_user();
+
+
+
 ?>
 
 
@@ -74,39 +79,46 @@ $current_user = wp_get_current_user();
     <div class="custom-account-content-area">
         <!-- My Account Section -->
         <div class="custom-account-content-section custom-account-active" id="my-account">
-            <div class="custom-account-form-row">
-                <div class="custom-account-form-group">
-                    <label class="custom-account-label" for="first-name">First name <span
-                            class="custom-account-required">*</span></label>
-                    <input class="custom-account-input" type="text" id="first-name" value="Mohammed">
-                </div>
-                <div class="custom-account-form-group">
-                    <label class="custom-account-label" for="last-name">Last name <span
-                            class="custom-account-required">*</span></label>
-                    <input class="custom-account-input" type="text" id="last-name" value="Ashraf">
-                </div>
-            </div>
+            <form method="post" id="custom-account-form">
+                <input type="hidden" name="custom_account_update" value="1">
 
-            <div class="custom-account-form-row">
-                <div class="custom-account-form-group custom-account-full-width">
-                    <label class="custom-account-label" for="business-name">Business Name <span
-                            class="custom-account-required">*</span></label>
-                    <input class="custom-account-input" type="text" id="business-name" value="Hashmis- admin">
-                    <div class="custom-account-help-text">This will be how your name will be displayed in the account
-                        section and in reviews</div>
+                <div class="custom-account-form-row">
+                    <div class="custom-account-form-group">
+                        <label for="first-name">First name</label>
+                        <input type="text" name="first_name" id="first-name"
+                            value="<?php echo esc_attr(get_user_meta($current_user->ID, 'first_name', true)); ?>"
+                            disabled>
+                    </div>
+                    <div class="custom-account-form-group">
+                        <label for="last-name">Last name</label>
+                        <input type="text" name="last_name" id="last-name"
+                            value="<?php echo esc_attr(get_user_meta($current_user->ID, 'last_name', true)); ?>"
+                            disabled>
+                    </div>
                 </div>
-            </div>
 
-            <div class="custom-account-form-row">
-                <div class="custom-account-form-group custom-account-full-width">
-                    <label class="custom-account-label" for="email">Email address <span
-                            class="custom-account-required">*</span></label>
-                    <input class="custom-account-input" type="email" id="email" value="mohammedashraf1102@gmail.com">
+                <div class="custom-account-form-row">
+                    <div class="custom-account-form-group custom-account-full-width">
+                        <label for="business-name">Business Name</label>
+                        <input type="text" name="business_name" id="business-name"
+                            value="<?php echo esc_attr(get_user_meta($current_user->ID, 'business_name', true)); ?>"
+                            disabled>
+                    </div>
                 </div>
-            </div>
 
-            <button class="custom-account-edit-btn">Edit</button>
+                <div class="custom-account-form-row">
+                    <div class="custom-account-form-group custom-account-full-width">
+                        <label for="email">Email address</label>
+                        <input type="email" name="email" id="email"
+                            value="<?php echo esc_attr($current_user->user_email); ?>" disabled>
+                    </div>
+                </div>
+
+                <button type="button" id="edit-save-btn" class="custom-account-edit-btn">Edit</button>
+            </form>
         </div>
+
+
 
         <!-- My Orders Section -->
         <div class="custom-account-content-section" id="my-orders">

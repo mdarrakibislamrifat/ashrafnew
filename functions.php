@@ -53,3 +53,53 @@ function my_account_enqueue_scripts() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'my_account_enqueue_scripts' );
+
+
+// 1. Add extra fields at registration
+function custom_save_extra_user_fields($user_id) {
+    if (isset($_POST['first_name'])) {
+        update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name']));
+    }
+    if (isset($_POST['last_name'])) {
+        update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name']));
+    }
+    if (isset($_POST['business_name'])) {
+        update_user_meta($user_id, 'business_name', sanitize_text_field($_POST['business_name']));
+    }
+}
+add_action('user_register', 'custom_save_extra_user_fields');
+
+
+// custom update user profile
+
+function custom_update_user_profile() {
+    if (isset($_POST['custom_account_update'])) {
+        $user_id = get_current_user_id();
+
+        update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name']));
+        update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name']));
+        update_user_meta($user_id, 'business_name', sanitize_text_field($_POST['business_name']));
+
+        if (isset($_POST['email']) && is_email($_POST['email'])) {
+            wp_update_user([
+                'ID' => $user_id,
+                'user_email' => sanitize_email($_POST['email']),
+            ]);
+        }
+    }
+}
+add_action('init', 'custom_update_user_profile');
+
+
+// Restrict access for logged-out users
+function restrict_logged_out_users_pages() {
+    if ( !is_user_logged_in() ) {
+
+        // Allow only homepage and Custom My Account template
+        if ( !is_front_page() && !is_page_template('my-account.php') ) {
+            wp_redirect( home_url() ); // redirect to homepage
+            exit;
+        }
+    }
+}
+add_action('template_redirect', 'restrict_logged_out_users_pages');
