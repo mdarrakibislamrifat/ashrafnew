@@ -26,6 +26,46 @@ add_action( 'wp_enqueue_scripts', 'child_enqueue_styles', 15 );
 
 
 
+// Restrict access for logged-out users
+
+function restrict_logged_out_users_pages() {
+    if ( !is_user_logged_in() ) {
+        // Allow homepage + custom my account page only
+        if ( !is_front_page() && !is_page_template('my-account.php') ) {
+
+            // Add query parameter for notice
+            wp_redirect( home_url( '?login_required=1' ) );
+            exit;
+        }
+    }
+}
+add_action('template_redirect', 'restrict_logged_out_users_pages');
+
+// Enqueue SweetAlert2 and custom script for alert
+function enqueue_swal_scripts() {
+    // Load SweetAlert2 from CDN
+    wp_enqueue_script( 'sweetalert2', 'https://cdn.jsdelivr.net/npm/sweetalert2@11', array(), null, true );
+
+    // Custom script to trigger alert
+    if ( isset($_GET['login_required']) ) {
+        add_action('wp_footer', function() {
+            ?>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Please Login',
+        text: 'You need to login before accessing this page.',
+        confirmButtonText: 'OK'
+    });
+});
+</script>
+<?php
+        });
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_swal_scripts');
+
 
 // Custom My Account Page Template
 function my_account_enqueue_styles() {
@@ -89,17 +129,3 @@ function custom_update_user_profile() {
     }
 }
 add_action('init', 'custom_update_user_profile');
-
-
-// Restrict access for logged-out users
-function restrict_logged_out_users_pages() {
-    if ( !is_user_logged_in() ) {
-
-        // Allow only homepage and Custom My Account template
-        if ( !is_front_page() && !is_page_template('my-account.php') ) {
-            wp_redirect( home_url() ); // redirect to homepage
-            exit;
-        }
-    }
-}
-add_action('template_redirect', 'restrict_logged_out_users_pages');

@@ -12,22 +12,33 @@ if ( isset($_POST['custom_logout']) ) {
 }
 
 // Show login form for logged-out users
-if ( !is_user_logged_in() ) : ?>
+if ( !is_user_logged_in() ) : 
+    // Get shop-2 page URL for redirect after login
+    $shop2_url = get_permalink( get_page_by_path( 'shop-2' ) );
+?>
 <div class="custom-account-login-wrapper">
     <div class="custom-account-login-form">
         <h2>Login</h2>
         <?php
-            $shop2_url = get_permalink( get_page_by_path('shop-2') );
-
-            wp_login_form(array(
-                'redirect'       => get_permalink( get_page_by_path('shop-2') ), 
+            wp_login_form( array(
+                'redirect'       => $shop2_url, 
                 'label_username' => 'Email or Username',
                 'label_password' => 'Password',
                 'label_log_in'   => 'Login',
-            ));
+            ) );
         ?>
+
+        <div class="custom-account-login-links">
+            <!-- Lost Password link points to wp-login.php?action=lostpassword -->
+            <a href="<?php echo esc_url( site_url('wp-login.php?action=lostpassword') ); ?>">Lost your password?</a>
+
+
+        </div>
     </div>
 </div>
+
+
+
 
 <style>
 .custom-account-login-wrapper {
