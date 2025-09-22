@@ -23,7 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = document.getElementById('tracking-number')?.value.trim();
         alert(value ? `Tracking package: ${value}` : 'Please enter a tracking number');
     });
+
 });
+
+
+
 
 
 // save and edit button functionality can be added here

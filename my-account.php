@@ -4,18 +4,45 @@
  */
 defined( 'ABSPATH' ) || exit;
 
-get_header();
+// 1️⃣ Handle My Account form submission for logged-in users
+if ( isset($_POST['custom_account_update']) && is_user_logged_in() ) {
+    $user_id = get_current_user_id();
 
-// Handle logout without redirect
-if ( isset($_POST['custom_logout']) ) {
-    wp_logout();
+    update_user_meta( $user_id, 'first_name', sanitize_text_field( $_POST['first_name'] ) );
+    update_user_meta( $user_id, 'last_name', sanitize_text_field( $_POST['last_name'] ) );
+    update_user_meta( $user_id, 'business_name', sanitize_text_field( $_POST['business_name'] ) );
+
+    if ( isset($_POST['email']) && is_email( $_POST['email'] ) ) {
+        wp_update_user([
+            'ID'         => $user_id,
+            'user_email' => sanitize_email( $_POST['email'] ),
+        ]);
+    }
+
+    // ✅ Redirect immediately to prevent form resubmission
+    wp_safe_redirect( get_permalink() );
+    exit;
 }
 
-// Show login form for logged-out users
-if ( !is_user_logged_in() ) : 
-    // Get shop-2 page URL for redirect after login
+// 2️⃣ Handle logout
+if ( isset($_POST['custom_logout']) ) {
+    wp_logout();
+    wp_safe_redirect( get_permalink() ); 
+    exit;
+}
+
+// 3️⃣ Now output the page content
+get_header();
+
+// 4️⃣ Show login form for logged-out users
+if ( ! is_user_logged_in() ) : 
     $shop2_url = get_permalink( get_page_by_path( 'shop-2' ) );
 ?>
+
+
+
+
+
 <div class="custom-account-login-wrapper">
     <div class="custom-account-login-form">
         <h2>Login</h2>
@@ -72,6 +99,19 @@ endif;
 
 // Show custom account container for logged-in users
 $current_user = wp_get_current_user();
+
+
+// Get current user ID
+$current_user_id = get_current_user_id();
+
+// Get orders for this user
+$customer_orders = wc_get_orders( array(
+    'customer_id' => $current_user_id,
+    'limit'       => -1,
+    'orderby'     => 'date',
+    'order'       => 'DESC',
+) );
+
 
 
 
@@ -134,39 +174,72 @@ $current_user = wp_get_current_user();
         <!-- My Orders Section -->
         <div class="custom-account-content-section" id="my-orders">
             <h2 class="custom-account-page-title">My Orders</h2>
-            <div class="custom-account-order-item">
-                <div class="custom-account-order-header">
-                    <span class="custom-account-order-number">Order #12345</span>
-                    <span class="custom-account-order-status">Completed</span>
-                </div>
-                <div>Date: September 15, 2025</div>
-                <div>Total: $99.99</div>
-            </div>
 
-            <div class="custom-account-order-item">
-                <div class="custom-account-order-header">
-                    <span class="custom-account-order-number">Order #12346</span>
-                    <span class="custom-account-order-status">Processing</span>
-                </div>
-                <div>Date: September 18, 2025</div>
-                <div>Total: $149.99</div>
-            </div>
+            <table class="custom-account-orders-table" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $customer_orders as $order ) : ?>
+                    <?php 
+                        $order_id     = $order->get_id();
+                        $order_date   = wc_format_datetime( $order->get_date_created() );
+                        $order_status = wc_get_order_status_name( $order->get_status() );
+                        $order_total  = $order->get_formatted_order_total();
+                        $order_view   = $order->get_view_order_url();
+                    ?>
+                    <tr>
+                        <td>#<?php echo esc_html( $order_id ); ?></td>
+                        <td><?php echo esc_html( $order_date ); ?></td>
+                        <td><?php echo esc_html( $order_status ); ?></td>
+                        <td><?php echo wp_kses_post( $order_total ); ?></td>
+                        <td>
+                            <a href="<?php echo esc_url( $order_view ); ?>">View</a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+
         </div>
 
         <!-- Track Delivery Section -->
         <div class="custom-account-content-section" id="track-delivery">
             <h2 class="custom-account-page-title">Track Delivery</h2>
             <div class="custom-account-tracking-form">
-                <div class="custom-account-form-group">
-                    <label class="custom-account-label" for="tracking-number">Enter Tracking Number</label>
-                    <input class="custom-account-input" type="text" id="tracking-number"
-                        placeholder="Enter your tracking number">
-                </div>
-                <div class="custom-account-tracking-input">
-                    <button class="custom-account-track-btn">Track Package</button>
+                <form id="track-order-form" method="post" action="" novalidate>
+                    <div class="custom-account-form-group">
+                        <label class="custom-account-label" for="order-id">Order ID</label>
+                        <input class="custom-account-input" type="text" id="order-id" name="order_id"
+                            placeholder="Enter your Order ID">
+                    </div>
+
+                    <div class="custom-account-form-group">
+                        <label class="custom-account-label" for="billing-email">Billing Email</label>
+                        <input class="custom-account-input" type="text" id="billing-email" name="billing_email"
+                            placeholder="Enter your Billing Email">
+
+                    </div>
+
+                    <div class="custom-account-tracking-input">
+                        <button type="submit" class="custom-account-track-btn">Track Order</button>
+
+                    </div>
+                </form>
+
+                <div class="custom-account-tracking-result">
+
                 </div>
             </div>
         </div>
+
+
 
         <!-- Logout Section -->
         <div class="custom-account-content-section" id="logout">
@@ -182,6 +255,48 @@ $current_user = wp_get_current_user();
         </div>
     </div>
 </div>
+
+<script>
+jQuery(document).ready(function($) {
+    $('#track-order-form').on('submit', function(e) {
+        e.preventDefault(); // stop normal form submission
+
+        var order_id = $('#order-id').val().trim();
+        var billing_email = $('#billing-email').val().trim();
+
+        // // Simple validation
+        // if (order_id === '') {
+        //     $('.custom-account-tracking-result').html(
+        //         '<p style="color:red;">Please enter a tracking number</p>');
+        //     return;
+        // }
+        // if (billing_email === '') {
+        //     $('.custom-account-tracking-result').html(
+        //         '<p style="color:red;">Please enter your billing email</p>');
+        //     return;
+        // }
+
+
+        // AJAX request
+        $.ajax({
+            url: '<?php echo admin_url("admin-ajax.php"); ?>',
+            type: 'POST',
+            data: {
+                action: 'track_order_ajax',
+                order_id: order_id,
+                billing_email: billing_email
+            },
+            success: function(response) {
+                $('.custom-account-tracking-result').html(response);
+            },
+            error: function() {
+                $('.custom-account-tracking-result').html(
+                    '<p>Something went wrong. Please try again.</p>');
+            }
+        });
+    });
+});
+</script>
 
 
 <?php get_footer(); ?>
