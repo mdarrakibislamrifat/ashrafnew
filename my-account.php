@@ -4,7 +4,9 @@
  */
 defined( 'ABSPATH' ) || exit;
 
-// 1️⃣ Handle My Account form submission for logged-in users
+
+
+//  Handle My Account form submission for logged-in users
 if ( isset($_POST['custom_account_update']) && is_user_logged_in() ) {
     $user_id = get_current_user_id();
 
@@ -24,17 +26,21 @@ if ( isset($_POST['custom_account_update']) && is_user_logged_in() ) {
     exit;
 }
 
-// 2️⃣ Handle logout
+
+
+//  Handle logout
 if ( isset($_POST['custom_logout']) ) {
     wp_logout();
     wp_safe_redirect( get_permalink() ); 
     exit;
 }
 
-// 3️⃣ Now output the page content
+
 get_header();
 
-// 4️⃣ Show login form for logged-out users
+
+
+//  Show login form for logged-out users
 if ( ! is_user_logged_in() ) : 
     $shop2_url = get_permalink( get_page_by_path( 'shop-2' ) );
 ?>
@@ -175,7 +181,9 @@ $customer_orders = wc_get_orders( array(
         <div class="custom-account-content-section" id="my-orders">
             <h2 class="custom-account-page-title">My Orders</h2>
 
-            <table class="custom-account-orders-table" style="width:100%; border-collapse:collapse;">
+            <table id="my-orders-table" class="custom-account-orders-table"
+                style="width:100%; border-collapse:collapse;">
+
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -200,12 +208,18 @@ $customer_orders = wc_get_orders( array(
                         <td><?php echo esc_html( $order_status ); ?></td>
                         <td><?php echo wp_kses_post( $order_total ); ?></td>
                         <td>
-                            <a href="<?php echo esc_url( $order_view ); ?>">View</a>
+                            <a href="javascript:void(0);" class="view-order"
+                                data-order-id="<?php echo esc_attr( $order_id ); ?>">View</a>
                         </td>
+
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <div id="order-details-container" style="display:none; margin-top:20px;">
+                <!-- Order details will be injected here -->
+            </div>
+
 
         </div>
 
@@ -256,6 +270,61 @@ $customer_orders = wc_get_orders( array(
     </div>
 </div>
 
+
+
+
+<!-- Order Details Script -->
+<script>
+// order details toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const viewButtons = document.querySelectorAll('.view-order');
+    const detailsContainer = document.getElementById('order-details-container');
+    const ordersTable = document.getElementById('my-orders-table');
+
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const orderId = this.getAttribute('data-order-id');
+
+            // If clicking same order, toggle back to table
+            if (detailsContainer.dataset.currentOrder === orderId) {
+                detailsContainer.style.display = 'none';
+                detailsContainer.dataset.currentOrder = '';
+                ordersTable.style.display = 'table'; // show table
+                return;
+            }
+
+            detailsContainer.dataset.currentOrder = orderId;
+
+            // Hide table
+            ordersTable.style.display = 'none';
+
+            // Show order details (demo placeholder)
+            detailsContainer.innerHTML = `
+                <h3>Order #${orderId} Details</h3>
+                <p>Here you can show all order items, totals, status, etc.</p>
+                <button id="back-to-orders">Back to Orders</button>
+            `;
+            detailsContainer.style.display = 'block';
+            detailsContainer.scrollIntoView({
+                behavior: 'smooth'
+            });
+
+            // Back button to show table again
+            document.getElementById('back-to-orders').addEventListener('click', function() {
+                detailsContainer.style.display = 'none';
+                ordersTable.style.display = 'table';
+                detailsContainer.dataset.currentOrder = '';
+            });
+        });
+    });
+});
+</script>
+
+
+
+
+
+
 <script>
 jQuery(document).ready(function($) {
     $('#track-order-form').on('submit', function(e) {
@@ -263,18 +332,6 @@ jQuery(document).ready(function($) {
 
         var order_id = $('#order-id').val().trim();
         var billing_email = $('#billing-email').val().trim();
-
-        // // Simple validation
-        // if (order_id === '') {
-        //     $('.custom-account-tracking-result').html(
-        //         '<p style="color:red;">Please enter a tracking number</p>');
-        //     return;
-        // }
-        // if (billing_email === '') {
-        //     $('.custom-account-tracking-result').html(
-        //         '<p style="color:red;">Please enter your billing email</p>');
-        //     return;
-        // }
 
 
         // AJAX request

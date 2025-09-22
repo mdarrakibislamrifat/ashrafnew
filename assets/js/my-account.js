@@ -21,10 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const trackBtn = document.querySelector('.custom-account-track-btn');
     trackBtn?.addEventListener('click', () => {
         const value = document.getElementById('tracking-number')?.value.trim();
-        alert(value ? `Tracking package: ${value}` : 'Please enter a tracking number');
     });
 
 });
+
 
 
 
@@ -47,3 +47,5 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+

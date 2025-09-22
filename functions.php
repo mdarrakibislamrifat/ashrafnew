@@ -105,8 +105,6 @@ add_action('user_register', 'custom_save_extra_user_fields');
 
 
 
-
-
 // Track Order fields and AJAX handler
 add_action('wp_ajax_track_order_ajax', 'custom_track_order_ajax');
 add_action('wp_ajax_nopriv_track_order_ajax', 'custom_track_order_ajax');
