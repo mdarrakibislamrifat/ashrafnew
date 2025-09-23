@@ -206,10 +206,28 @@ $customer_orders = wc_get_orders( array(
                         <td>#<?php echo esc_html( $order_id ); ?></td>
                         <td><?php echo esc_html( $order_date ); ?></td>
                         <td><?php echo esc_html( $order_status ); ?></td>
-                        <td><?php echo wp_kses_post( $order_total ); ?></td>
+                        <td>
+                            <?php 
+                                    $order_total_clean = '$' . $order->get_total(); // raw total with $ sign
+                                    $item_count = $order->get_item_count();        // total items
+                                    echo esc_html( $order_total_clean ) . ' (' . esc_html( $item_count ) . ' items)';
+                                ?>
+                        </td>
+
+
                         <td>
                             <a href="javascript:void(0);" class="view-order"
-                                data-order-id="<?php echo esc_attr( $order_id ); ?>">View</a>
+                                data-order-id="<?php echo esc_attr($order_id); ?>"
+                                data-order-date="<?php echo esc_attr($order_date); ?>"
+                                data-order-status="<?php echo esc_attr($order_status); ?>"
+                                data-order-total="<?php echo esc_attr($order_total_clean); ?>" data-order-items='<?php 
+                                                $items = [];
+                                                foreach ($order->get_items() as $item) {
+                                                    $items[] = $item->get_name() . ' × ' . $item->get_quantity();
+                                                }
+                                                echo esc_attr(json_encode($items));
+                                            ?>'>View</a>
+
                         </td>
 
                     </tr>
@@ -275,7 +293,6 @@ $customer_orders = wc_get_orders( array(
 
 <!-- Order Details Script -->
 <script>
-// order details toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
     const viewButtons = document.querySelectorAll('.view-order');
     const detailsContainer = document.getElementById('order-details-container');
@@ -283,33 +300,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     viewButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const orderId = this.getAttribute('data-order-id');
+            const orderId = this.dataset.orderId;
 
             // If clicking same order, toggle back to table
             if (detailsContainer.dataset.currentOrder === orderId) {
                 detailsContainer.style.display = 'none';
                 detailsContainer.dataset.currentOrder = '';
-                ordersTable.style.display = 'table'; // show table
+                ordersTable.style.display = 'table';
                 return;
             }
 
             detailsContainer.dataset.currentOrder = orderId;
-
-            // Hide table
             ordersTable.style.display = 'none';
 
-            // Show order details (demo placeholder)
+            // Get order details from data attributes
+            const orderDate = this.dataset.orderDate;
+            const orderStatus = this.dataset.orderStatus;
+            const orderTotal = this.dataset.orderTotal;
+            const orderItems = JSON.parse(this.dataset.orderItems);
+
+            // Render order details
+            let itemsHtml = '<ul>';
+            orderItems.forEach(item => {
+                itemsHtml += `<li>${item}</li>`;
+            });
+            itemsHtml += '</ul>';
+
             detailsContainer.innerHTML = `
-                <h3>Order #${orderId} Details</h3>
-                <p>Here you can show all order items, totals, status, etc.</p>
+                <h4>Order #${orderId} Details</h4>
+                <p><strong>Date:</strong> ${orderDate}</p>
+                <p><strong>Status:</strong> ${orderStatus}</p>
+                <p><strong>Items:</strong> ${itemsHtml}</p>
+                <p><strong>Total:</strong> ${orderTotal}</p>
                 <button id="back-to-orders">Back to Orders</button>
             `;
+
             detailsContainer.style.display = 'block';
             detailsContainer.scrollIntoView({
                 behavior: 'smooth'
             });
 
-            // Back button to show table again
             document.getElementById('back-to-orders').addEventListener('click', function() {
                 detailsContainer.style.display = 'none';
                 ordersTable.style.display = 'table';
